@@ -25,14 +25,23 @@
 
 			<section class="main" x-show="todos.length > 0">
         <input
+          x-cloak
+          x-model="allCompleted"
+          x-show="todos.length > 0"
+          @click="toggleAll"
           id="toggle-all"
           class="toggle-all"
           type="checkbox"
         >
-        <label for="toggle-all">Mark all as complete</label>
+        <label
+          x-cloak
+          for="toggle-all"
+          x-show="todos.length > 0"
+        >Mark all as complete
+        </label>
 
 				<ul class="todo-list">
-          <template x-for="todo in todos" :key="todo.submittedAt">
+          <template x-for="todo in filteredTodos" :key="todo.id">
             <li
               :class="{
                 completed: todo.completed,
@@ -41,6 +50,7 @@
             >
               <div class="view">
                 <input
+                  x-model="todo.completed"
                   @click="toggleCompleted(todo)"
                   class="toggle"
                   type="checkbox"
@@ -70,25 +80,36 @@
 				</ul>
       </section>
 
-			<footer class="footer" x-show="todos.length > 0">
+			<footer class="footer" x-cloak x-show="todos.length > 0">
 				<span class="todo-count">
           <strong x-text="activeTodosCount">
           </strong>
           item<span x-text="activeTodosCount !== 1 ? 's' : ''"></span> left</span>
 
-				<!-- Remove this if you don't implement routing -->
 				<ul class="filters">
-					<li>
-						<a @click.prevent="filter = 'all'" class="selected" href="#/">All</a>
+					<li x-show="todos.length !== filteredTodos.length">
+            <a
+              @click.prevent="filter = 'all'"
+              :class="{ selected: filter === 'all' }"
+              href="#/">All
+            </a>
 					</li>
-					<li>
-						<a @click.prevent="filter = 'active'" href="#/active">Active</a>
+					<li x-show="activeTodosCount > 0 && completedTodosCount > 0">
+            <a
+              @click.prevent="filter = 'active'"
+              :class="{ selected: filter === 'active' }"
+              href="#/active">Active
+            </a>
 					</li>
-					<li>
-						<a @click.prevent="filter = 'completed'" href="#/completed">Completed</a>
+					<li x-show="completedTodosCount > 0 && activeTodosCount > 0">
+            <a
+              @click.prevent="filter = 'completed'"
+              :class="{ selected: filter === 'completed' }"
+              href="#/completed">Completed
+            </a>
 					</li>
 				</ul>
-				<!-- Hidden if no completed items are left ↓ -->
+
         <button
           class="clear-completed"
           x-show="completedTodosCount > 0"
@@ -104,7 +125,7 @@
 			<p>Created by <a href="https://heathernuffer.com">Heather Nuffer</a></p>
 			<p>Part of <a href="http://todomvc.com">TodoMVC</a></p>
 		</footer>
-		<!-- Scripts here. Don't remove ↓ -->
+
 		<script src="node_modules/todomvc-common/base.js"></script>
     <script src="js/app.js"></script>
     <script>
@@ -114,13 +135,43 @@
           newTodo: '',
           selectedTodoForEditing: null,
           filter: 'all',
+
+          get filteredTodos() {
+            return {
+              all: this.todos,
+              active: this.activeTodos,
+              completed: this.completedTodos
+            }[this.filter]
+          },
+          get activeTodos() {
+            return this.todos.filter(todo => !todo.completed)
+          },
+          get activeTodosCount() {
+            return this.activeTodos.length
+          },
+          get completedTodos() {
+            return this.todos.filter(todo => todo.completed)
+          },
+          get completedTodosCount() {
+            return this.completedTodos.length
+          },
+          get allCompleted() {
+            return this.todos.length === this.completedTodosCount
+          },
+          set allCompleted(param) {
+            return this.todos.length === this.completedTodosCount
+          },
+
           addTodo() {
-            this.todos.push({
-              body: this.newTodo,
-              completed: false,
-              submittedAt: Date.now()
-            })
-            this.newTodo = ''
+            if (this.newTodo.trim() !== '') {
+              this.todos.push({
+                id: Date.now() + + Math.floor(Math.random() * 1000000),
+                body: this.newTodo,
+                completed: false,
+                submittedAt: Date.now()
+              })
+              this.newTodo = ''
+            }
           },
           destroyTodo(selectedTodo) {
             let index = this.todos.indexOf(selectedTodo)
@@ -129,20 +180,8 @@
           toggleCompleted(selectedTodo) {
             selectedTodo.completed = !selectedTodo.completed
           },
-          get activeTodos() {
-            return this.todos.filter(todo => !todo.completed)
-          },
-          get activeTodosCount() {
-            return this.activeTodos.length
-          },
           removeCompletedTodos() {
             this.todos = this.activeTodos
-          },
-          get completedTodos() {
-            return this.todos.filter(todo => todo.completed)
-          },
-          get completedTodosCount() {
-            return this.completedTodos.length
           },
           editTodo(selectedTodo) {
             selectedTodo.cachedBody = selectedTodo.body
@@ -160,6 +199,12 @@
             selectedTodo.body = selectedTodo.cachedBody
             delete selectedTodo.cachedBody
             this.selectedTodoForEditing = null
+          },
+          toggleAll() {
+            // Cache the value of this.allCompleted because each loop of forEach
+            // could cause this.allComplete to become reevaluated
+            let allCompletedCached = this.allCompleted
+            this.todos.forEach(todo=> todo.completed = !allCompletedCached)
           }
         }
       }
