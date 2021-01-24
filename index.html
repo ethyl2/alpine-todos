@@ -131,7 +131,7 @@
     <script>
       function todosDataAndMethods() {
         return {
-          todos: [],
+          ...todoStore,
           newTodo: '',
           selectedTodoForEditing: null,
           filter: 'all',
@@ -171,17 +171,21 @@
                 submittedAt: Date.now()
               })
               this.newTodo = ''
+              this.save()
             }
           },
           destroyTodo(selectedTodo) {
             let index = this.todos.indexOf(selectedTodo)
             this.todos.splice(index, 1)
+            this.save()
           },
           toggleCompleted(selectedTodo) {
             selectedTodo.completed = !selectedTodo.completed
+            this.save()
           },
           removeCompletedTodos() {
             this.todos = this.activeTodos
+            this.save()
           },
           editTodo(selectedTodo) {
             selectedTodo.cachedBody = selectedTodo.body
@@ -194,6 +198,7 @@
               selectedTodo.body = selectedTodo.body.trim()
             }
             this.selectedTodoForEditing = null
+            this.save()
           },
           cancelEdit(selectedTodo) {
             selectedTodo.body = selectedTodo.cachedBody
@@ -205,7 +210,15 @@
             // could cause this.allComplete to become reevaluated
             let allCompletedCached = this.allCompleted
             this.todos.forEach(todo=> todo.completed = !allCompletedCached)
+            this.save()
           }
+        }
+      }
+
+      window.todoStore = {
+        todos: JSON.parse(localStorage.getItem('todo-store')) || [],
+        save() {
+          localStorage.setItem('todo-store', JSON.stringify(this.todos))
         }
       }
     </script>
