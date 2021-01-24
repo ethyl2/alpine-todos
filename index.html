@@ -206,7 +206,8 @@
             this.selectedTodoForEditing = null
           },
           toggleAll() {
-            // Cache the value of this.allCompleted because each loop of forEach
+            // Cache the value of this.allCompleted to use here
+            // because each loop of forEach
             // could cause this.allComplete to become reevaluated
             let allCompletedCached = this.allCompleted
             this.todos.forEach(todo=> todo.completed = !allCompletedCached)
